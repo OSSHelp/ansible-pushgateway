@@ -1,0 +1,11 @@
+#!/bin/bash
+
+data_dir="{{ pushgateway_persistence.dir }}"
+user="{{ pushgateway_user_name }}"
+group="{{ pushgateway_user_name }}"
+
+test -d "${data_dir}" || {
+  mkdir -pv "${data_dir}" && \
+    chmod 755 "${data_dir}" && \
+      chown "${user}:${group}" "${data_dir}"
+}

@@ -1,0 +1,23 @@
+---
+
+- name: check if binary file exists
+  stat:
+    path: "{{ pushgateway_binary_dir }}/{{ pushgateway_binary_name }}"
+  register: binary_file
+
+- name: get binary
+  block:
+    - name: download and extract binary
+      unarchive:
+        src: "{{ pushgateway_binary_url }}"
+        dest: /tmp
+        remote_src: yes
+    - name: copy binary
+      copy:
+        src: "/tmp/pushgateway-{{ pushgateway_version }}.linux-amd64/{{ pushgateway_binary_name }}"
+        dest: "{{ pushgateway_binary_dir }}/{{ pushgateway_binary_name }}"
+        owner: root
+        group: root
+        mode: 0755
+        remote_src: yes
+  when: not binary_file.stat.exists and not ansible_check_mode

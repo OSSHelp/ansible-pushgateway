@@ -1,0 +1,41 @@
+---
+
+- name: create user
+  user:
+    name: "{{ pushgateway_user_name }}"
+    home: "/nonexistent"
+    create_home: no
+    shell: "/bin/false"
+    system: yes
+
+- name: create systemd unit
+  template:
+    src: systemd-unit.j2
+    dest: "{{ pushgateway_systemd_unit }}"
+  notify:
+    - reload pushgateway unit
+    - restart pushgateway service
+
+- name: prepare initial-setup script
+  block:
+    - name: prepare directory
+      file:
+        path: "{{ pushgateway_templates_dir }}"
+        state: directory
+        owner: "root"
+        group: "root"
+    - name: place inital-setup script
+      template:
+        src: "initial-setup.j2"
+        dest: "{{ pushgateway_templates_dir }}/initial-setup"
+        owner: "root"
+        group: "root"
+        mode: 0750
+  when: pushgateway_persistence.enabled and not ansible_check_mode
+
+- meta: flush_handlers
+
+- name: enable service
+  systemd:
+    name: "{{ pushgateway_service_name }}"
+    enabled: true

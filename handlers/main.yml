@@ -1,0 +1,10 @@
+---
+
+- name: reload pushgateway unit
+  systemd:
+    daemon_reload: true
+
+- name: restart pushgateway service
+  systemd:
+    name: "{{ pushgateway_service_name }}"
+    state: restarted

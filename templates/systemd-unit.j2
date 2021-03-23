@@ -1,0 +1,38 @@
+[Unit]
+Description=pushgateway
+
+[Service]
+Type=forking
+User={{ pushgateway_user_name }}
+Group={{ pushgateway_user_name }}
+RuntimeDirectory=pushgateway
+RuntimeDirectoryMode=0755
+{% if ansible_distribution_release == 'focal' %}
+PIDFile=/run/pushgateway/pid
+ExecStartPre=+{{ pushgateway_templates_dir }}/initial-setup
+{% else %}
+PIDFile=/var/run/pushgateway/pid
+{% endif %}
+{% if ansible_distribution_release == 'bionic' %}
+ExecStartPre=+{{ pushgateway_templates_dir }}/initial-setup
+{% elif ansible_distribution_release == 'xenial' %}
+PermissionsStartOnly=true
+ExecStartPre={{ pushgateway_templates_dir }}/initial-setup
+{% endif %}
+ExecStart=/sbin/start-stop-daemon -Sbmp /var/run/pushgateway/pid -x {{ pushgateway_binary_dir }}/pushgateway -- \
+    --log.level="{{ pushgateway_params.log_level }}" \
+    --log.format="{{ pushgateway_params.log_format }}" \
+{% if pushgateway_persistence.enabled %}
+    --persistence.file="{{ pushgateway_persistence.dir }}/{{ pushgateway_persistence.file }}" \
+    --persistence.interval={{ pushgateway_persistence.interval }} \
+{% endif %}
+    --web.listen-address="{{ pushgateway_params.listen_address }}"
+
+Restart=always
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=pushgateway
+
+[Install]
+WantedBy=multi-user.target
